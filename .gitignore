@@ -57,3 +57,4 @@ src/*.dll
 # added files
 *.html
 *_files/
+.DS_Store
