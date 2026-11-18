@@ -1,0 +1,48 @@
+---
+title: "Women in national parliaments and environmental policies in the EU, 2007–2022"
+author:
+  - "Leelou GRANDMOUGIN"
+  - "Vincent LE QUANG"
+date: today
+format:
+  html:
+    toc: true
+    number-sections: true
+    code-fold: true
+    code-summary: "Show code"
+    embed-resources: true
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: initial-setup
+library(tidyverse)
+library(knitr)
+
+# Data importation
+eige_raw     <- read_csv("data/wmid_natparl.csv") # Proportion of women in national parliaments
+renew_raw    <- read_csv("data/nrg_ind_ren.csv") # Share of renewable energies
+spend_raw    <- read_csv("data/gov_10a_exp.csv") # Public spending on environmental protection
+tax_raw      <- read_csv("data/env_ac_tax.csv") # Environmental taxes
+paygap_raw   <- read_csv("data/sdg_05_20.csv") # Pay gap between women and men
+election_raw <- read_csv("data/view_election.csv") # Elections
+party_raw    <- read_csv("data/view_party.csv") # Political parties
+
+# Reference table of the 27 EU Member States 
+eu27 <- tribble( # Manually created table with 2 columns : country name and its associated Eurostat code
+  ~country,      ~code, # "~" allows to declare the column names
+  "Austria",     "AT", "Belgium",    "BE", "Bulgaria",   "BG",
+  "Croatia",     "HR", "Cyprus",     "CY", "Czechia",    "CZ",
+  "Denmark",     "DK", "Estonia",    "EE", "Finland",    "FI",
+  "France",      "FR", "Germany",    "DE", "Greece",     "EL",
+  "Hungary",     "HU", "Ireland",    "IE", "Italy",      "IT",
+  "Latvia",      "LV", "Lithuania",  "LT", "Luxembourg", "LU",
+  "Malta",       "MT", "Netherlands","NL", "Poland",     "PL",
+  "Portugal",    "PT", "Romania",    "RO", "Slovakia",   "SK",
+  "Slovenia",    "SI", "Spain",      "ES", "Sweden",     "SE"
+)
+
+years <- 2007:2022 # Creation of a vector with the years that interest us
+```
