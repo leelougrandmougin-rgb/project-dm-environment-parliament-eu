@@ -3,7 +3,6 @@ title: "Women in national parliaments and environmental policies in the EU, 2007
 author:
   - "Leelou GRANDMOUGIN"
   - "Vincent LE QUANG"
-date: today
 format:
   html:
     toc: true
@@ -46,3 +45,26 @@ eu27 <- tribble( # Manually created table with 2 columns : country name and its 
 
 years <- 2007:2022 # Creation of a vector with the years that interest us
 ```
+
+# Project repository
+
+All the code and the raw data of this project are available on this GitHub link:
+<https://github.com/leelougrandmougin-rgb/project-dm-environment-parliament-eu>
+
+# Data sources
+
+## How to obtain the data
+
+The table below gives for each source: the link to the data, the filters used, and the download date.
+
+For Eurostat, we opened the table in the Eurostat Data Browser, applied the filters listed below, and exported the result as a CSV file. EIGE (a CSV file) and ParlGov
+(a ZIP archive of CSV tables) were downloaded in full. The selection of the variables and period used in the analysis is described in the data cleaning section.
+
+| Source | Data | Filters at download | Download date |
+|---|---|---|---|
+| EIGE | [wmid_natparl](https://eige.europa.eu/gender-statistics/dgs/indicator/wmidm_pol_parl__wmid_natparl) | None (full table downloaded). | 22/10/2026 |
+| Eurostat | [nrg_ind_ren](https://ec.europa.eu/eurostat/databrowser/view/nrg_ind_ren/default/table?lang=en) | `nrg_bal` = REN, `unit` = PC, EU27, from 2004. | 22/10/2026 |
+| Eurostat | [gov_10a_exp](https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table) | `sector` = S13, `cofog99` = GF05, `na_item` = TE, `unit` = PC_GDP, EU27, from 2004. | 22/10/2026 |
+| Eurostat | [env_ac_tax](https://ec.europa.eu/eurostat/databrowser/view/env_ac_tax/default/table) | `unit` = PC_GDP, EU27, from 2004 (all tax types). | 22/10/2026 |
+| Eurostat | [sdg_05_20](https://ec.europa.eu/eurostat/databrowser/view/sdg_05_20/default/table?lang=en) | `nace_r2` = B-S_X_O, `unit` = PC, EU27, all years (2007–2022). | 17/11/2026 |
+| ParlGov | [parlgov.org](https://parlgov.org/data-info/) | None (full archive downloaded, November 2023 version); tables `view_election` and `view_party` kept. | 23/10/2026 |
