@@ -48,7 +48,7 @@ years <- 2007:2022 # Creation of a vector with the years that interest us
 
 # Project repository
 
-All the code and the raw data of this project are available on this GitHub link:
+All the code and the raw data of this project are available on GitHub:
 <https://github.com/leelougrandmougin-rgb/project-dm-environment-parliament-eu>
 
 # Data sources
@@ -62,9 +62,98 @@ For Eurostat, we opened the table in the Eurostat Data Browser, applied the filt
 
 | Source | Data | Filters at download | Download date |
 |---|---|---|---|
-| EIGE | [wmid_natparl](https://eige.europa.eu/gender-statistics/dgs/indicator/wmidm_pol_parl__wmid_natparl) | None (full table downloaded). | 22/10/2026 |
-| Eurostat | [nrg_ind_ren](https://ec.europa.eu/eurostat/databrowser/view/nrg_ind_ren/default/table?lang=en) | `nrg_bal` = REN, `unit` = PC, EU27, from 2004. | 22/10/2026 |
-| Eurostat | [gov_10a_exp](https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table) | `sector` = S13, `cofog99` = GF05, `na_item` = TE, `unit` = PC_GDP, EU27, from 2004. | 22/10/2026 |
-| Eurostat | [env_ac_tax](https://ec.europa.eu/eurostat/databrowser/view/env_ac_tax/default/table) | `unit` = PC_GDP, EU27, from 2004 (all tax types). | 22/10/2026 |
-| Eurostat | [sdg_05_20](https://ec.europa.eu/eurostat/databrowser/view/sdg_05_20/default/table?lang=en) | `nace_r2` = B-S_X_O, `unit` = PC, EU27, all years (2007–2022). | 17/11/2026 |
-| ParlGov | [parlgov.org](https://parlgov.org/data-info/) | None (full archive downloaded, November 2023 version); tables `view_election` and `view_party` kept. | 23/10/2026 |
+| EIGE | [wmid_natparl](https://eige.europa.eu/gender-statistics/dgs/indicator/wmidm_pol_parl__wmid_natparl) | None (full table downloaded). | 2026-10-22 |
+| Eurostat | [nrg_ind_ren](https://ec.europa.eu/eurostat/databrowser/view/nrg_ind_ren/default/table?lang=en) | `nrg_bal` = REN, `unit` = PC, `geo` = the 27 EU Member States, from 2004. | 2026-10-22 |
+| Eurostat | [gov_10a_exp](https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table) | `sector` = S13, `cofog99` = GF05, `na_item` = TE, `unit` = PC_GDP, `geo` = the 27 EU Member States, from 2004. | 2026-10-22 |
+| Eurostat | [env_ac_tax](https://ec.europa.eu/eurostat/databrowser/view/env_ac_tax/default/table) | `unit` = PC_GDP, `geo` = the 27 EU Member States, from 2004 (all tax types). | 2026-10-22 |
+| Eurostat | [sdg_05_20](https://ec.europa.eu/eurostat/databrowser/view/sdg_05_20/default/table?lang=en) | `nace_r2` = B-S_X_O, `unit` = PC, `geo` = the 27 EU Member States, all years (2007–2022). | 2026-11-17 |
+| ParlGov | [parlgov.org](https://parlgov.org/data-info/) | None (full archive downloaded, November 2023 version). | 2026-10-23 |
+
+## Description of the sources
+
+**EIGE.** The European Institute for Gender Equality (EIGE) is an EU agency. Its Gender Statistics Database collects data on the number of women and men in decision-making positions. The table "National parliaments: presidents and members" (*wmid_natparl*) counts women and men among the members and the presidents of national parliaments, for the single or lower house, the upper house and both houses combined. It is a quarterly data set covering `r n_distinct(eige_raw$geo)` countries and aggregates, from `r substr(min(eige_raw$time), 1, 4)` to `r substr(max(eige_raw$time), 1, 4)`. Each row corresponds to a combination of country, quarter, chamber, position, sex and unit (absolute number or percentage). The share of women in the single or lower house is our explanatory variable.
+
+**Eurostat.** Eurostat is the statistical office of the European Union, and its data are harmonized across Member States. We used four annual data sets: 
+
+- *nrg_ind_ren* : share of renewable energy in gross final energy consumption, the indicator used to express the EU targets for 2020 and 2030. It measures the outcome of environmental policies.
+- *gov_10a_exp* : general government expenditure by function (COFOG classification), here on environmental protection, as a percentage of GDP. It measures the budgetary effort. 
+- *env_ac_tax* : environmental tax revenues from national accounts, by category (energy, transport, pollution and resources), as a percentage of GDP. It measures a fiscal instrument voted by parliaments. 
+
+- *sdg_05_20* : unadjusted gender pay gap, defined as the difference between the average gross hourly earnings of men and women, as a percentage of men's earnings. It covers firms with ten employees or more, in industry, construction and services (except public administration, defense and compulsory social security). It is based on the Structure of Earnings Survey, which takes place every four years, with national estimates for the years in between. 
+
+**ParlGov.** ParlGov (Parliaments and Governments database) is an academic database compiled from official and secondary sources. It documents elections, parties and cabinets in European and OECD democracies. The version used here is the November 2023 archive, made of 33 CSV tables. We used two of them: 
+
+- *view_election* : number of seats won by each party at each election. 
+- *view_party* : political family of each party. 
+
+Combined, they give the share of seats held by green parties, our second control variable.
+
+## Data files
+
+```{r}
+#| label: file-tables
+#| results: asis
+
+# Build one table per data file.
+# d: the data frame
+# file: its path
+# content: short description
+# time: the column with dates (NULL if none)
+# area: the column with countries
+
+file_info <- function(d, file, content, time = NULL, area) {
+  tibble(
+    Item  = c("File", "Content", "Rows", "Columns", "Period", "Countries / entities"),
+    Value = c(file, content,
+              format(nrow(d), big.mark = ","), # number of rows
+              ncol(d), # number of columns
+              if (is.null(time)) "Not applicable" else paste(range(substr(time, 1, 4)), collapse = " to "), # first and last year of the data 
+              n_distinct(area)) # number of different countries
+  )
+}
+
+# Store each table in a list.   
+tables <- list(
+  "EIGE: women in national parliaments" =
+    file_info(eige_raw, "data/wmid_natparl.csv",
+              "Number or percentage of women and men in national parliaments, by quarter",
+              eige_raw$time, eige_raw$geo),
+  "Eurostat: renewable energy share" =
+    file_info(renew_raw, "data/nrg_ind_ren.csv",
+              "Share of renewable energy in gross final energy consumption (%)",
+              renew_raw$TIME_PERIOD, renew_raw$geo),
+  "Eurostat: government spending on environmental protection" =
+    file_info(spend_raw, "data/gov_10a_exp.csv",
+              "General government expenditure on environmental protection (% of GDP)",
+              spend_raw$TIME_PERIOD, spend_raw$geo),
+  "Eurostat: environmental taxes" =
+    file_info(tax_raw, "data/env_ac_tax.csv",
+              "Environmental tax revenues (% of GDP)",
+              tax_raw$TIME_PERIOD, tax_raw$geo),
+  "Eurostat: gender pay gap" =
+    file_info(paygap_raw, "data/sdg_05_20.csv",
+              "Unadjusted gender pay gap (% of men's hourly earnings)",
+              paygap_raw$TIME_PERIOD, paygap_raw$geo),
+  "ParlGov: election results" =
+    file_info(election_raw, "data/view_election.csv",
+              "Seats won by each party at each election",
+              election_raw$election_date, election_raw$country_name),
+  "ParlGov: parties" =
+    file_info(party_raw, "data/view_party.csv",
+              "Political family of each party",
+              area = party_raw$country_name)
+)
+
+# Print the tables one after the other.
+for (i in seq_along(tables)) {
+  title <- names(tables)[i]
+  if (i > 1) cat("\n\n&nbsp;")   # blank line between a table and the next title
+  cat("\n\n**", sub(":.*", "", title), "**:", sub("^[^:]*:", "", title), "\n\n", sep = "") # title in bold, the rest in normal font
+  cat(kable(tables[[i]]), sep = "\n") # kable() turns the tibble into a markdown table, cat() writes it in the document
+}
+```
+
+
+
+
+
