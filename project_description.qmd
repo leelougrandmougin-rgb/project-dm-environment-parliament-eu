@@ -20,7 +20,7 @@ execute:
 library(tidyverse)
 library(knitr)
 
-# Data importation
+# Data importation (raw tables, cleaned later)
 eige_raw     <- read_csv("data/wmid_natparl.csv") # Proportion of women in national parliaments
 renew_raw    <- read_csv("data/nrg_ind_ren.csv") # Share of renewable energies
 spend_raw    <- read_csv("data/gov_10a_exp.csv") # Public spending on environmental protection
@@ -46,6 +46,7 @@ eu27 <- tribble( # Manually created table with 2 columns : country name and its 
 years <- 2007:2022 # Creation of a vector with the years that interest us
 ```
 
+
 # Project repository
 
 All the code and the raw data of this project are available on GitHub:
@@ -69,6 +70,7 @@ For Eurostat, we opened the table in the Eurostat Data Browser, applied the filt
 | Eurostat | [sdg_05_20](https://ec.europa.eu/eurostat/databrowser/view/sdg_05_20/default/table?lang=en) | `nace_r2` = B-S_X_O, `unit` = PC, `geo` = the 27 EU Member States, all years (2007–2022). | 2026-11-17 |
 | ParlGov | [parlgov.org](https://parlgov.org/data-info/) | None (full archive downloaded, November 2023 version). | 2026-10-23 |
 
+
 ## Description of the sources
 
 **EIGE.** The European Institute for Gender Equality (EIGE) is an EU agency. Its Gender Statistics Database collects data on the number of women and men in decision-making positions. The table "National parliaments: presidents and members" (*wmid_natparl*) counts women and men among the members and the presidents of national parliaments, for the single or lower house, the upper house and both houses combined. It is a quarterly data set covering `r n_distinct(eige_raw$geo)` countries and aggregates, from `r substr(min(eige_raw$time), 1, 4)` to `r substr(max(eige_raw$time), 1, 4)`. Each row corresponds to a combination of country, quarter, chamber, position, sex and unit (absolute number or percentage). The share of women in the single or lower house is our explanatory variable.
@@ -88,6 +90,7 @@ For Eurostat, we opened the table in the Eurostat Data Browser, applied the filt
 
 Combined, they give the share of seats held by green parties, our second control variable.
 
+
 ## Data files
 
 ```{r}
@@ -95,24 +98,24 @@ Combined, they give the share of seats held by green parties, our second control
 #| results: asis
 
 # Build one table per data file.
-# d: the data frame
-# file: its path
-# content: short description
-# time: the column with dates (NULL if none)
-# area: the column with countries
+# d: The data frame
+# file: Its path
+# content: Short description
+# time: The column with dates (NULL if none)
+# area: The column with countries
 
 file_info <- function(d, file, content, time = NULL, area) {
   tibble(
     Item  = c("File", "Content", "Rows", "Columns", "Period", "Countries / entities"),
     Value = c(file, content,
-              format(nrow(d), big.mark = ","), # number of rows
-              ncol(d), # number of columns
-              if (is.null(time)) "Not applicable" else paste(range(substr(time, 1, 4)), collapse = " to "), # first and last year of the data 
-              n_distinct(area)) # number of different countries
+              format(nrow(d), big.mark = ","), # Number of rows
+              ncol(d), # Number of columns
+              if (is.null(time)) "Not applicable" else paste(range(substr(time, 1, 4)), collapse = " to "), # Period : first and last year (4 first digits of the date), or "Not applicable" if no dates available
+              n_distinct(area)) # Number of different countries
   )
 }
 
-# Store each table in a list.   
+# Store each table in a list.
 tables <- list(
   "EIGE: women in national parliaments" =
     file_info(eige_raw, "data/wmid_natparl.csv",
@@ -145,15 +148,148 @@ tables <- list(
 )
 
 # Print the tables one after the other.
-for (i in seq_along(tables)) {
-  title <- names(tables)[i]
-  if (i > 1) cat("\n\n&nbsp;")   # blank line between a table and the next title
-  cat("\n\n**", sub(":.*", "", title), "**:", sub("^[^:]*:", "", title), "\n\n", sep = "") # title in bold, the rest in normal font
+for (i in seq_along(tables)) { # One loop per table
+  title <- names(tables)[i] # Get the title of the table number "i"
+  if (i > 1) cat("\n\n&nbsp;")   # Blank line between a table and the next title
+  cat("\n\n**", sub(":.*", "", title), "**:", sub("^[^:]*:", "", title), "\n\n", sep = "") # Title in bold, the rest in normal font
   cat(kable(tables[[i]]), sep = "\n") # kable() turns the tibble into a markdown table, cat() writes it in the document
 }
 ```
 
 
+# Most important variables
+
+We only describe here the variables used in our analysis, those used to select the relevant rows, and those used to join the different data sets.
+
+**Explanatory variable**: share of women in national parliaments (from `wmid_natparl`).
+
+- *Analysis*: `value` gives this share once the right rows have been selected. This column contains either a number of people or a percentage, depending on the `UNIT`.
+- *Selection*: `UNIT`, `EGROUP`, `POSITION` and `sex` (the unit, chamber, position and sex of each `value`) allow us to identify the rows giving the percentage of women among the members of the single or lower house.
+- *Join*: `geo` and `time`, country name and quarter of observation.
+
+**Dependent variables**: renewable energy, environmental spending and taxes (from `nrg_ind_ren`, `gov_10a_exp` and `env_ac_tax`).
+
+- *Analysis*: `OBS_VALUE` gives the share of renewable energy in gross final energy consumption (%) in `nrg_ind_ren`, the general government expenditure on environmental protection (% of GDP) in `gov_10a_exp`, and the environmental tax revenue (% of GDP) in `env_ac_tax`.
+- *Selection*: `tax` (actual category of environmental tax) in `env_ac_tax` allows us to identify the rows giving the total environmental taxes.
+- *Join*: `geo` and `TIME_PERIOD`, country name and year of observation.
+
+**Control variables**: gender pay gap and share of green seats in national parliaments (from `sdg_05_20`, `view_election` and `view_party`).
+
+- *Analysis*: `OBS_VALUE` gives the unadjusted gender pay gap (%) in `sdg_05_20`, while the share of seats held by green parties is computed from `seats` and `seats_total` (both from `view_election`) and `family_name_short` (from `view_party`, where `eco` identifies the green parties).
+- *Selection*: `election_type` (the type of election, national or European Parliament) in `view_election` allows us to identify the rows of national parliamentary elections.
+- *Join*: `geo` and `TIME_PERIOD` in `sdg_05_20` (country code and year), `country_name` and `election_date` in `view_election` (country and date of the election), and `party_id` in `view_election` and `view_party` (identifier of a party).
 
 
+# Joining and cleaning
 
+The sources differ in observation frequency (quarterly for EIGE, annual for Eurostat, election-based for ParlGov) and in the way countries are named.
+In the following sections we first clean each source separately before matching all of them by country and year.
+
+## EIGE
+
+We keep the percentage of women among the members of the single or lower house for the current 27 Member States and for the period 2007–2022. The quarterly values are averaged to get one value per year.
+
+```{r}
+#| label: clean-eige
+
+# It keeps the share of women (in %) among the members of the single or lower house, for the EU27
+women_q <- eige_raw |>
+  filter(`_UNIT` == "PC", `_EGROUP` == "PARL_SINGLOW",
+         `_POSITION` == "MEMB_PARL", `_sex` == "W",
+         geo %in% eu27$country) |>
+    mutate(year = as.integer(str_sub(time, 1, 4))) |>  # Years are defined as the first 4 characters of the quarter (converted to integers)
+  filter(year %in% years)
+
+women <- women_q |>
+  group_by(country = geo, year) |> # Renaming "geo" to "country" in order to harmonize the column names across the tables
+  summarise(women = mean(value), .groups = "drop") # We take the average of the quarters of each year to get one final value per country and year
+```
+
+The quarter 2007-Q3 is missing for all countries, so the mean of 2007 uses only three values.
+
+## Eurostat
+
+For the three indicators, we keep the 27 Member States and the period 2007-2022. 
+For `env_ac_tax`, we only keep the total of environmental taxes.
+
+```{r}
+#| label: clean-eurostat
+
+clean_eurostat <- function(d) { # Following function is used to clean every Eurostat table
+  d |>
+    filter(geo %in% eu27$country, TIME_PERIOD %in% years) |>
+    select(country = geo, year = TIME_PERIOD, value = OBS_VALUE) # It keep and renames 3 columns, with the same names for the three tables
+}
+
+# Then we apply the previous function to our three indicators, and rename each value column after its indicator
+renew  <- clean_eurostat(renew_raw) |> rename(renewables = value)
+spend  <- clean_eurostat(spend_raw) |> rename(env_spending = value)
+envtax <- tax_raw |>
+    filter(tax == "Total environmental taxes") |>  # It only keeps the total (as it removes the rows of the other non useful categories)
+  clean_eurostat() |>
+  rename(env_tax = value)
+```
+
+## Gender pay gap
+
+First, we convert the country codes to country names (with `eu27`). Then, we average the pay gap over 2007–2010 for each country and compare it to the median of the 27 countries: below the median means that the country is "more gender-equal", and above it means "less gender-equal".
+
+```{r}
+#| label: clean-paygap
+
+# First thing first is that we convert each country codes to names (e.g. "EL" to "Greece") ; we also keep our study period 2007-2022
+paygap <- paygap_raw |>
+  left_join(eu27, by = c("geo" = "code")) |> # We link each country code to its name using the "eu27" table
+  filter(TIME_PERIOD %in% years) |>
+  select(country, year = TIME_PERIOD, pay_gap = OBS_VALUE) # We keep "country" (from eu27) and rename the year and value columns
+
+# In this part we compute the mean pay gap of each country over 2007-2010 and compare it with the median of the 27 countries
+equality_groups <- paygap |>
+  filter(year <= 2010) |>
+  group_by(country) |>
+  summarise(gap_2007_2010 = mean(pay_gap, na.rm = TRUE)) |> # We create a new variable that is the mean pay gap of each country over 2007-2010 (we didn't forget to ignore the missing values)
+  mutate(equality_group = case_when( # We create another new variable that classifies each country relative to the median of the 27 countries
+  gap_2007_2010 <  median(gap_2007_2010, na.rm = TRUE) ~ "more gender-equal",
+  gap_2007_2010 >= median(gap_2007_2010, na.rm = TRUE) ~ "less gender-equal")) 
+```
+
+## ParlGov
+
+We only keep the national parliamentary elections (and not the European ones).
+We also recode "Czech Republic" to "Czechia" (which is the name used in the other sources).
+We then join our two ParlGov tables (`view_election` and `view_party`) by `party_id` in order to:
+
+- get the political family of each party (not present in `view_election`);
+- compute for each election the share of seats of the single or lower house held by green parties (`eco`).
+
+Finally, for each year, we take the last election held on or before 31 December (in order to keep our result until the next election).
+
+```{r}
+#| label: clean-parlgov
+
+# Share of seats held by green parties at each national election of the EU27
+green <- election_raw |>
+  filter(election_type == "parliament") |>
+  mutate(country = recode(country_name, "Czech Republic" = "Czechia")) |>  # It creates "country" from "country_name", renaming "Czech Republic" to "Czechia" as in the other sources
+  filter(country %in% eu27$country) |>
+  left_join(select(party_raw, party_id, family_name_short), by = "party_id") |>   # We join the party family from "view_party" to each election row of "view election", using "party_id"
+  group_by(country, election_date) |>
+  summarise(green_share = 100 * sum(seats[family_name_short %in% "eco"], na.rm = TRUE) /  # We sum here without using filter() (as elections without green party must stay in the table, with 0 % !)
+                            max(seats_total, na.rm = TRUE),
+            .groups = "drop") # "seats_total" is repeated on every party row of an election, so max() keeps one copy of it
+
+green_year <- expand_grid(country = eu27$country, year = years) |>
+  mutate(year_end = as.Date(paste0(year, "-12-31"))) |> # We build the date "31 December" of each year, so that the elections of that year are included in the comparison
+  left_join(green, by = join_by(country, closest(year_end >= election_date))) |> # We join to each country-year the green share of its latest election (up to 31 December)
+  select(country, year, green_share) # We keep the keys country and year and the green share
+```
+
+## Missing values
+
+We decided to keep the missing values as missing. They concern three variables:
+
+- `env_spending` (Eurostat): Slovakia has no data for the period 2007–2009.
+- `pay_gap` (Eurostat): Croatia has 6 missing years and Greece has 10.
+- `seats` (ParlGov): missing for a few parties in Cyprus (2021), Hungary (2010–2022) and Poland (2007). They are ignored in the sum of seats (as we removed the NA), which does not affect the green share since none of them belongs to the green family.
+
+The other variables (women in parliament, renewables, environmental taxes, green share) are complete for the 432 country-years.
