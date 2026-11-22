@@ -52,6 +52,26 @@ years <- 2007:2022 # Creation of a vector with the years that interest us
 All the code and the raw data of this project are available on GitHub:
 <https://github.com/leelougrandmougin-rgb/project-dm-environment-parliament-eu>
 
+# Research question
+
+Women’s presence in European national parliaments has increased steadily since the mid-2000s (EIGE, 2019), part of a broader rise of women in governance worldwide that has led academics to ask whether women make different political decisions than men (Salamon, 2022). This raises a question about representation: does having more women among elected members change what parliaments decide? We study one policy area, the environment, and ask: do EU member states with a higher share of women in parliament have stronger environmental policies, and does the same pattern appear within countries over time, between 2007 and 2022?
+
+Environmental policy is an interesting case for two reasons. First, it can be measured in several comparable ways across EU countries. Second, it is not a traditional “women’s issue”, so it tests whether women’s presence matters beyond such issues (Salamon, 2022).
+
+We look at the 27 current EU member states, observed yearly (432 country-years). With so few countries, we adopt a longitudinal design. The period starts in 2007 because it is when EU leaders set the 2020 climate and energy targets, and EIGE data are incomplete before that year.
+
+We measure environmental policy at three levels: an outcome (the share of renewables in gross final energy consumption), an input (public spending on environmental protection, as a share of GDP) and an instrument (environmental tax revenues, as a share of GDP). Each is a dependent variable and none is treated as the main one. We read higher values as stronger policy, although this is a simplification (tax revenues, for instance, also depend on energy consumption).
+
+Our main hypothesis is that countries with a higher share of women in parliament also score higher on these three indicators. We expect this association to be weaker in countries with more gender inequality, where elected women may have to adopt dominant masculine norms to succeed. We measure gender inequality with the gender pay gap, used as a control and also to split countries into more and less gender-equal groups, based on each country’s average for the 2007-2010 period. We also expect to observe the same pattern within countries: in years when the share of women in a given country is above its own average, the corresponding indicators should also be higher.
+
+An alternative explanation could be that the link comes from parties rather than from the gender of members: green parties may elect more women and also push for environmental policies. We therefore control for the green seat share in the lower house.
+
+Our strategy relies on linear regressions on the country-year panel. We first compare countries with each other, regressing each indicator on the share of women, with year dummies to remove shocks common to all countries, and adding the green seat share and the pay gap as controls step by step. We then add an interaction with the “more gender-equal” group. To check whether the pattern also holds over time, we split each country’s share of women into its period average and its yearly deviation, which gives between-country and within-country estimates in one model. Plots and descriptive statistics complete the analysis.
+
+Finally, an association is not a causal effect: countries with more women differ in many other ways, such as wealth (which we do not control for), political culture or natural resources, and the indicators also depend on energy prices, crises and EU-level targets. With only 27 countries, each observed 16 times, standard errors are likely too small, so significance should be read as indicative only.
+
+
+
 # Data sources
 
 ## How to obtain the data
