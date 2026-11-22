@@ -7,7 +7,7 @@ format:
   html:
     toc: true
     number-sections: true
-    code-fold: true
+    code-fold: true # It allows to fold the code chunks behind a button in the html
     code-summary: "Show code"
     embed-resources: true
 execute:
@@ -97,7 +97,7 @@ Combined, they give the share of seats held by green parties, our second control
 #| label: file-tables
 #| results: asis
 
-# Build one table per data file.
+# We build one table per data file
 # d: The data frame
 # file: Its path
 # content: Short description
@@ -115,7 +115,7 @@ file_info <- function(d, file, content, time = NULL, area) {
   )
 }
 
-# Store each table in a list.
+# We store each table in a list
 tables <- list(
   "EIGE: women in national parliaments" =
     file_info(eige_raw, "data/wmid_natparl.csv",
@@ -147,7 +147,7 @@ tables <- list(
               area = party_raw$country_name)
 )
 
-# Print the tables one after the other.
+# Finally, we print the tables one after the other
 for (i in seq_along(tables)) { # One loop per table
   title <- names(tables)[i] # Get the title of the table number "i"
   if (i > 1) cat("\n\n&nbsp;")   # Blank line between a table and the next title
@@ -323,4 +323,40 @@ panel |>
                    ~ sum(is.na(.x)))) |>  # We count the missing values of each variable
   filter(if_any(-country, ~ .x > 0)) |>  # We keep the countries with at least one missing value
   kable(caption = "Number of missing country-years (out of 16), by variable")
+```
+
+# Target variables
+
+Our target variables are our three dependent variables, which we treat equally: the share of renewable energy in gross final energy consumption (outcome), public spending on environmental protection (input) and environmental tax revenues (instrument).
+
+```{r}
+#| label: target-plot
+#| fig-width: 10
+#| fig-height: 4.5
+long_panel <- panel |>
+  pivot_longer(c(renewables, env_spending, env_tax), # We reshape to one row per country, year and indicator, so that ggplot can draw one plot per indicator
+               names_to = "indicator", values_to = "value") |>
+  mutate(indicator = factor(indicator, # We set the order of the plots and we give them titles
+                            levels = c("renewables", "env_spending", "env_tax"),
+                            labels = c("Renewables (% of energy consumption)",
+                                       "Environmental spending (% of GDP)",
+                                       "Environmental taxes (% of GDP)")))
+
+# We also compute (and will represent it) the mean of the 27 countries as a benchmark
+eu_mean <- long_panel |>
+  group_by(indicator, year) |>
+  summarise(value = mean(value, na.rm = TRUE), .groups = "drop")  # We ignore the missing values
+
+selected_countries <- c("Sweden", "Germany", "Poland", "Malta")  # We choose a few countries from different parts of the EU to follow their trajectories (in colour)
+
+ggplot(long_panel, aes(x = year, y = value, group = country)) +
+  geom_line(colour = "grey80") +  # We draw each of the 27 countries in grey
+  geom_line(data = filter(long_panel, country %in% selected_countries), aes(colour = country), linewidth = 0.9) +  # We draw the selected countries in colour
+  geom_line(data = eu_mean, aes(group = 1), colour = "black", linewidth = 1.4) +  # We draw the mean in black
+  facet_wrap(~ indicator, scales = "free_y", ncol = 3) +  #  We draw one plot per indicator, each with its own vertical scale (since the units and levels differ)
+  labs(title = "Environmental policy indicators in the EU, 2007–2022",
+       subtitle = "27 countries (grey), four selected countries (in colour) and mean of the 27 countries (black)",
+       x = NULL, y = NULL, colour = NULL) +  # We remove the axis titles and the legend title (in order to make the overall figure more readable)
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
