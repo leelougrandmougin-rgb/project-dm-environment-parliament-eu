@@ -361,7 +361,7 @@ eu_mean <- long_panel |>
 selected_countries <- c("Sweden", "Germany", "Poland", "Malta")  # We choose a few countries from different parts of the EU to follow their trajectories (in colour)
 
 ggplot(long_panel, aes(x = year, y = value, group = country)) +
-  geom_line(colour = "grey40", aplha = 0.6) +  # We draw each of the 27 countries in grey (semi-transparent, to see where lines overlap)
+  geom_line(colour = "grey40", alpha = 0.6) +  # We draw each of the 27 countries in grey (semi-transparent, to see where lines overlap)
   geom_line(data = eu_mean, aes(group = 1), colour = "black", linewidth = 1.4) +  # We draw the mean in black
   facet_wrap(~ indicator, scales = "free_y", ncol = 3) +  #  We draw one plot per indicator, each with its own vertical scale (since the units and levels differ)
   labs(title = "Environmental policy indicators in the EU, 2007–2022",
