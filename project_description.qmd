@@ -183,7 +183,7 @@ We only describe here the variables used in our analysis, those used to select t
 # Joining and cleaning
 
 The sources differ in observation frequency (quarterly for EIGE, annual for Eurostat, election-based for ParlGov) and in the way countries are named.
-In the following sections we first clean each source separately before matching all of them by country and year.
+Then, in the following sections we first clean each source separately before matching all of them by country and year.
 
 ## EIGE
 
@@ -275,8 +275,8 @@ green <- election_raw |>
   left_join(select(party_raw, party_id, family_name_short), by = "party_id") |>   # We join the party family from "view_party" to each election row of "view election", using "party_id"
   group_by(country, election_date) |>
   summarise(green_share = 100 * sum(seats[family_name_short %in% "eco"], na.rm = TRUE) /  # We sum here without using filter() (as elections without green party must stay in the table, with 0 % !)
-                            max(seats_total, na.rm = TRUE),
-            .groups = "drop") # "seats_total" is repeated on every party row of an election, so max() keeps one copy of it
+                            max(seats_total, na.rm = TRUE), # "seats_total" is repeated on every party row of an election, so max() keeps one copy of it
+            .groups = "drop")
 
 green_year <- expand_grid(country = eu27$country, year = years) |>
   mutate(year_end = as.Date(paste0(year, "-12-31"))) |> # We build the date "31 December" of each year, so that the elections of that year are included in the comparison
@@ -284,12 +284,43 @@ green_year <- expand_grid(country = eu27$country, year = years) |>
   select(country, year, green_share) # We keep the keys country and year and the green share
 ```
 
+## Final panel
+
+To obtain our final panel (one row per country and year), we join all the cleaned tables by country and year, starting from a table with every combination of our 27 countries and 16 years.
+
+```{r}
+#| label: panel
+country_year <- expand_grid(country = eu27$country, year = years) # It creates all the possible combinations with our countries and years (27 x 16 = 432 rows) - which is slightly useful because eventual missing data in a source will give an NA when joining (instead of removing the row !)
+
+# Then we join to it each previous cleaned table, matching on country and year
+panel <- country_year |>
+  left_join(women,  by = c("country", "year")) |>
+  left_join(renew,  by = c("country", "year")) |>
+  left_join(spend,  by = c("country", "year")) |>
+  left_join(envtax, by = c("country", "year")) |>
+  left_join(paygap, by = c("country", "year")) |>
+  left_join(green_year, by = c("country", "year")) |>
+  left_join(select(equality_groups, country, equality_group), by = "country")  # We also add the equality group for each country (this means that need to remove "gap_2007_2010", used only to build the group, and we perform the matching by country, since the group is defined only once per country)
+
+stopifnot(nrow(panel) == 432)  # It stops with an error if the joins duplicated or if there are lost rows (we expect exactly 432 rows) 
+```
+
 ## Missing values
 
-We decided to keep the missing values as missing. They concern three variables:
+We decided to keep the missing values as missing (rather than imputing them). They concern three variables:
 
 - `env_spending` (Eurostat): Slovakia has no data for the period 2007–2009.
 - `pay_gap` (Eurostat): Croatia has 6 missing years and Greece has 10.
-- `seats` (ParlGov): missing for a few parties in Cyprus (2021), Hungary (2010–2022) and Poland (2007). They are ignored in the sum of seats (as we removed the NA), which does not affect the green share since none of them belongs to the green family.
+- `seats` (ParlGov): missing for a few parties in Cyprus (2021), Hungary (2010–2022) and Poland (2007). They are ignored in the sum of seats (`na.rm = TRUE`), which does not affect the green share since none of them belongs to the green family.
 
-The other variables (women in parliament, renewables, environmental taxes, green share) are complete for the 432 country-years.
+The other variables (women in parliament, renewables, environmental taxes, green share and the equality group) are complete for the 432 country-years. The table below counts the missing values of the panel by country and variable.
+
+```{r}
+#| label: missing
+panel |>
+  group_by(country) |>
+  summarise(across(c(women, renewables, env_spending, env_tax, pay_gap, green_share),
+                   ~ sum(is.na(.x)))) |>  # We count the missing values of each variable
+  filter(if_any(-country, ~ .x > 0)) |>  # We keep the countries with at least one missing value
+  kable(caption = "Number of missing country-years (out of 16), by variable")
+```
