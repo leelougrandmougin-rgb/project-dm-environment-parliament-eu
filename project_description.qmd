@@ -335,15 +335,6 @@ We decided to keep the missing values as missing (rather than imputing them). Th
 
 The other variables (women in parliament, renewables, environmental taxes, green share and the equality group) are complete for the 432 country-years. The table below counts the missing values of the panel by country and variable.
 
-```{r}
-#| label: missing
-panel |>
-  group_by(country) |>
-  summarise(across(c(women, renewables, env_spending, env_tax, pay_gap, green_share),
-                   ~ sum(is.na(.x)))) |>  # We count the missing values of each variable
-  filter(if_any(-country, ~ .x > 0)) |>  # We keep the countries with at least one missing value
-  kable(caption = "Number of missing country-years (out of 16), by variable")
-```
 
 # Target variables
 
@@ -370,13 +361,18 @@ eu_mean <- long_panel |>
 selected_countries <- c("Sweden", "Germany", "Poland", "Malta")  # We choose a few countries from different parts of the EU to follow their trajectories (in colour)
 
 ggplot(long_panel, aes(x = year, y = value, group = country)) +
-  geom_line(colour = "grey80") +  # We draw each of the 27 countries in grey
-  geom_line(data = filter(long_panel, country %in% selected_countries), aes(colour = country), linewidth = 0.9) +  # We draw the selected countries in colour
+  geom_line(colour = "grey40", aplha = 0.6) +  # We draw each of the 27 countries in grey (semi-transparent, to see where lines overlap)
   geom_line(data = eu_mean, aes(group = 1), colour = "black", linewidth = 1.4) +  # We draw the mean in black
   facet_wrap(~ indicator, scales = "free_y", ncol = 3) +  #  We draw one plot per indicator, each with its own vertical scale (since the units and levels differ)
   labs(title = "Environmental policy indicators in the EU, 2007–2022",
-       subtitle = "27 countries (grey), four selected countries (in colour) and mean of the 27 countries (black)",
-       x = NULL, y = NULL, colour = NULL) +  # We remove the axis titles and the legend title (in order to make the overall figure more readable)
+       subtitle = "27 countries (grey) and mean of the 27 countries (black)",
+       x = NULL, y = NULL) +  # We remove the axis titles and the legend title (in order to make the overall figure more readable)
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
+
+# References {.unnumbered}
+
+EIGE (2019). *Gender Equality Index 2019*. Publications Office of the European Union. 
+
+Salamon, H. (2022). The effect of women's parliamentary participation on renewable energy policy outcomes. *European Journal of Political Research*. 
